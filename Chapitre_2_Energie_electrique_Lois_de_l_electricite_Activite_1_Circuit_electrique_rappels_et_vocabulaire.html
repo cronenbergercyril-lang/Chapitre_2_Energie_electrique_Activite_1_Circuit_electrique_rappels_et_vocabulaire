@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animations du circuit électrique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Mise en page : bandeau titre, 4 onglets Doc., une scène animée à gauche, un panneau d'explication à droite. */
+  --bg:#F3F7F8; --card:#FFFFFF; --ink:#12262B; --muted:#4F6870; --line:#C9D8DC;
+  --teal:#1F6F78; --teal-soft:#DDEEF0; --amber:#C8651B; --amber-soft:#FBE9D8;
+  --red:#C62828; --blue:#2457D6; --green:#1F8A4C; --yellow:#F5C518;
+  --wire:#12262B; --water:#CFE8F7; --electrode:#8C969B;
+  --font:'Lexend',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1D21; --card:#172A30; --ink:#E8F1F3; --muted:#9DB6BD; --line:#2C4650;
+    --teal:#56B8C4; --teal-soft:#1D3C43; --amber:#F0975A; --amber-soft:#3A2A1C;
+    --red:#FF7B72; --blue:#7FA2FF; --green:#5BD08A; --yellow:#F5C518;
+    --wire:#E8F1F3; --water:#1D4A63; --electrode:#8C969B; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1D21; --card:#172A30; --ink:#E8F1F3; --muted:#9DB6BD; --line:#2C4650;
+  --teal:#56B8C4; --teal-soft:#1D3C43; --amber:#F0975A; --amber-soft:#3A2A1C;
+  --red:#FF7B72; --blue:#7FA2FF; --green:#5BD08A; --yellow:#F5C518;
+  --wire:#E8F1F3; --water:#1D4A63; --electrode:#8C969B; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5}
+header{padding:20px 20px 0;max-width:1100px;margin:0 auto}
+.kicker{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin:0}
+h1{font-size:26px;line-height:1.2;margin:4px 0 14px;text-wrap:balance}
+.topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+nav[role=tablist]{display:flex;flex-wrap:wrap;gap:8px}
+.tab{font:inherit;font-weight:600;font-size:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.tab .n{background:var(--teal);color:#fff;border-radius:6px;padding:1px 7px;font-size:12px}
+.tab[aria-selected=true]{border-color:var(--teal);background:var(--teal-soft)}
+.tab .star{font-size:11px;color:var(--amber);font-weight:700}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.pausebtn{font:inherit;font-size:13px;font-weight:500;border:1px solid var(--line);background:transparent;color:var(--muted);padding:6px 12px;border-radius:8px;cursor:pointer}
+main{max-width:1100px;margin:0 auto;padding:16px 20px 40px}
+section.doc{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
+section.doc[hidden]{display:none}
+@media (max-width:820px){section.doc{grid-template-columns:1fr}}
+.stage,.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.stage h2,.panel h2{font-size:17px;margin:0 0 8px}
+.stage svg{width:100%;height:auto;display:block}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.btn{font:inherit;font-size:14px;font-weight:600;border:2px solid var(--teal);background:var(--card);color:var(--teal);padding:7px 12px;border-radius:9px;cursor:pointer}
+.btn:hover{background:var(--teal-soft)}
+.btn[aria-pressed=true]{background:var(--teal);color:#fff}
+.btn.alt{border-color:var(--amber);color:var(--amber)}
+.btn.alt[aria-pressed=true]{background:var(--amber);color:#fff}
+.btn.big{padding:10px 16px;font-size:15px}
+.say{background:var(--teal-soft);border-left:5px solid var(--teal);padding:10px 12px;border-radius:8px;margin:10px 0 0;font-size:15px;min-height:3.2em}
+.say.warn{background:var(--amber-soft);border-color:var(--amber)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0;padding:0;list-style:none}
+.chip{font-size:13px;font-weight:600;padding:5px 10px;border-radius:999px;border:2px solid var(--line);color:var(--muted)}
+.chip.ok{border-color:var(--green);color:var(--green)}
+.chip.no{border-color:var(--red);color:var(--red)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:8px 0 0}
+.legend[hidden]{display:none}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.panel p{margin:0 0 8px}
+.panel .def{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:15px}
+.panel .def b{color:var(--teal)}
+.hint{font-size:13px;color:var(--muted)}
+/* SVG */
+.wire{stroke:var(--wire);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.comp{fill:var(--card);stroke:var(--wire);stroke-width:3.5}
+.ln{stroke:var(--wire);stroke-width:3.5;fill:none;stroke-linecap:round}
+.txt{fill:var(--ink);font-family:var(--font);font-size:15px;font-weight:600}
+.txt-s{fill:var(--muted);font-family:var(--font);font-size:12px}
+.pt{fill:var(--card);stroke:var(--wire);stroke-width:3}
+.pt-l{fill:var(--ink);font-family:var(--font);font-size:17px;font-weight:700}
+.hl{fill:none;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.hl.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.1s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion: reduce){.hl.draw{animation:none;stroke-dashoffset:0}}
+.sym{stroke:var(--wire);stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sym text{fill:var(--ink);stroke:none;font-family:var(--font);font-weight:700;font-size:15px}
+.sym .f{fill:var(--card)}
+.clickable{cursor:pointer}
+.clickable:focus:not(:focus-visible){outline:none}
+.card3{border:2px solid var(--teal);border-radius:14px;padding:12px;background:var(--card);text-align:center;min-height:250px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.card3 svg{width:min(260px,80%)}
+.card3 .name{font-size:20px;font-weight:700;margin:0}
+.card3 .role{margin:0;font-size:15px}
+.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;color:#fff}
+.badge.g{background:var(--amber)} .badge.r{background:var(--teal)} .badge.o{background:var(--muted)}
+.quiz-row{display:flex;gap:8px;flex-wrap:wrap}
+.check-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0}
+.check-row label{font-size:14px;font-weight:600}
+.check-row input{width:56px;font:inherit;font-size:16px;padding:6px 8px;border:2px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.sr{position:absolute;left:-9999px}
+.todo{background:var(--amber-soft);border-left:5px solid var(--amber);border-radius:8px;padding:10px 12px;margin:0 0 14px}
+.todo h2{color:var(--amber);margin:0 0 4px}
+.todo ol{margin:6px 0 0;padding-left:0;list-style:none}
+.todo li{margin:6px 0;font-size:14px;line-height:1.4}
+.todo li b{display:inline-block;min-width:1.4em;color:var(--amber)}
+.panel h2.sub{font-size:15px;margin:6px 0 8px;color:var(--teal)}
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">Thème 1 · Énergie · L'énergie électrique</p>
+  <h1>Observe, puis réponds</h1>
+  <div class="topbar">
+    <nav role="tablist" aria-label="Documents de l'activité">
+      <button class="tab" role="tab" id="t-doc-1" aria-controls="doc-1" data-doc="doc-1"><span class="n">Doc. 1</span>Le courant</button>
+      <button class="tab" role="tab" id="t-doc-2" aria-controls="doc-2" data-doc="doc-2"><span class="n">Doc. 2</span>Vocabulaire <span class="star">À RETENIR</span></button>
+      <button class="tab" role="tab" id="t-doc-3" aria-controls="doc-3" data-doc="doc-3"><span class="n">Doc. 3</span>Symboles</button>
+      <button class="tab" role="tab" id="t-doc-4" aria-controls="doc-4" data-doc="doc-4"><span class="n">Doc. 4</span>Conventions</button>
+    </nav>
+    <button class="pausebtn" id="pause" aria-pressed="false">Mettre en pause</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================ DOC 1 ============================ -->
+<section class="doc" id="doc-1" role="tabpanel" aria-labelledby="t-doc-1">
+  <div class="stage">
+    <h2>Doc. 1 · Le courant électrique</h2>
+    <div class="seg" role="group" aria-label="Milieu">
+      <button class="btn" id="d1-m-metal" aria-pressed="true">Dans les fils (métaux)</button>
+      <button class="btn" id="d1-m-sol" aria-pressed="false">Dans une solution</button>
+      <button class="btn alt big" id="d1-sw" aria-pressed="true">Ouvrir l'interrupteur</button>
+    </div>
+    <svg id="d1svg" viewBox="0 0 640 340" role="img" aria-label="Circuit avec une pile et une lampe : des charges se déplacent quand l'interrupteur est fermé">
+      <!-- ===== métaux ===== -->
+      <g id="d1-metal">
+        <path class="wire" d="M120 150 V60 H290 M350 60 H520 V138 M520 202 V280 H120 V190"/>
+        <g id="d1-eM"></g>
+        <!-- pile -->
+        <rect x="96" y="150" width="48" height="40" fill="var(--card)" stroke="none"/>
+        <line class="ln" x1="100" y1="152" x2="140" y2="152"/>
+        <line class="ln" x1="110" y1="188" x2="130" y2="188" style="stroke-width:8"/>
+        <text class="txt" x="152" y="158" style="fill:var(--red);font-size:20px">+</text>
+        <text class="txt" x="152" y="198" style="fill:var(--blue);font-size:22px">–</text>
+        <text class="txt-s" x="40" y="175">Pile</text>
+        <!-- lampe -->
+        <circle id="d1-glowM" cx="520" cy="170" r="52" fill="var(--yellow)" opacity="0"/>
+        <circle class="comp" cx="520" cy="170" r="30"/>
+        <line class="ln" x1="499" y1="149" x2="541" y2="191"/><line class="ln" x1="541" y1="149" x2="499" y2="191"/>
+        <text class="txt-s" x="560" y="175">Lampe</text>
+        <!-- interrupteur -->
+        <line id="d1-swM" class="wire" x1="290" y1="60" x2="350" y2="60"/>
+        <circle class="pt" cx="290" cy="60" r="5"/><circle class="pt" cx="350" cy="60" r="5"/>
+        <text class="txt-s" x="300" y="44">Interrupteur</text>
+        <g id="d1-arrM"></g>
+        <text class="txt" x="210" y="318" style="fill:var(--red)">Sens conventionnel du courant (+ vers –)</text>
+      </g>
+      <!-- ===== solution ===== -->
+      <g id="d1-sol" style="display:none">
+        <rect x="70" y="140" width="500" height="190" rx="8" fill="var(--water)" stroke="var(--wire)" stroke-width="3"/>
+        <path class="wire" d="M120 150 V50 H192 M208 50 H300 M360 50 H392 M448 50 H520 V150"/>
+        <g id="d1-eS"></g>
+        <rect x="105" y="150" width="30" height="165" fill="var(--electrode)" stroke="var(--wire)" stroke-width="2.5"/>
+        <rect x="505" y="150" width="30" height="165" fill="var(--electrode)" stroke="var(--wire)" stroke-width="2.5"/>
+        <g id="d1-ions"></g>
+        <line class="ln" x1="192" y1="32" x2="192" y2="68" style="stroke-width:9"/>
+        <line class="ln" x1="208" y1="26" x2="208" y2="74"/>
+        <text class="txt" x="170" y="22" style="fill:var(--blue);font-size:22px">–</text>
+        <text class="txt" x="213" y="22" style="fill:var(--red);font-size:20px">+</text>
+        <circle id="d1-glowS" cx="420" cy="50" r="48" fill="var(--yellow)" opacity="0"/>
+        <circle class="comp" cx="420" cy="50" r="28"/>
+        <line class="ln" x1="400" y1="30" x2="440" y2="70"/><line class="ln" x1="440" y1="30" x2="400" y2="70"/>
+        <line id="d1-swS" class="wire" x1="300" y1="50" x2="360" y2="50"/>
+        <circle class="pt" cx="300" cy="50" r="5"/><circle class="pt" cx="360" cy="50" r="5"/>
+        <g id="d1-bigarrows" style="opacity:.55">
+          <path d="M290 235 L250 235 L250 220 L214 245 L250 270 L250 255 L290 255 Z" fill="var(--red)"/>
+          <path d="M350 235 L390 235 L390 220 L426 245 L390 270 L390 255 L350 255 Z" fill="var(--green)"/>
+        </g>
+      </g>
+    </svg>
+    <div class="legend" id="d1-leg-metal"><span><i style="background:var(--blue)"></i>électron (charge –)</span><span><i style="background:var(--red)"></i>sens conventionnel du courant</span></div>
+    <div class="legend" id="d1-leg-sol" hidden><span><i style="background:var(--blue)"></i>électron</span><span><i style="background:var(--red)"></i>cation (ion +)</span><span><i style="background:var(--green)"></i>anion (ion –)</span></div>
+    <div class="say" id="d1-say" aria-live="polite" style="min-height:2.4em"></div>
+  </div>
+  <div class="panel">
+    <p><b>Un courant électrique</b> est un mouvement de porteurs de charges.</p>
+    <ul class="chips" id="d1-chips">
+      <li class="chip ok" id="c-gen">Un générateur</li>
+      <li class="chip ok" id="c-closed">Un circuit fermé</li>
+      <li class="chip ok" id="c-cond">Des matériaux conducteurs</li>
+      <li class="chip ok" id="c-rec">Un récepteur</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ DOC 2 ============================ -->
+<section class="doc" id="doc-2" role="tabpanel" aria-labelledby="t-doc-2" hidden>
+  <div class="stage">
+    <h2>Doc. 2 · Le vocabulaire des circuits</h2>
+    <div class="seg" role="group" aria-label="Notion à observer" id="d2-modes">
+      <button class="btn" data-mode="mailles" aria-pressed="true">Les mailles</button>
+      <button class="btn" data-mode="noeuds" aria-pressed="false">Les nœuds</button>
+      <button class="btn" data-mode="branches" aria-pressed="false">Les branches</button>
+      <button class="btn" data-mode="serie" aria-pressed="false">Série ou dérivation</button>
+      
+    </div>
+    <svg id="d2svg" viewBox="0 0 640 360" role="img" aria-label="Circuit avec un générateur et deux lampes en dérivation, points A à F">
+      <g id="d2-deriv">
+        <path class="wire" d="M120 60 V150 M120 210 V300 H520 V210 M520 150 V60 H120 M320 60 V150 M320 210 V300"/>
+        <!-- générateur -->
+        <rect x="96" y="150" width="48" height="60" fill="var(--card)" stroke="none"/>
+        <line class="ln" x1="100" y1="152" x2="140" y2="152"/>
+        <line class="ln" x1="110" y1="208" x2="130" y2="208" style="stroke-width:8"/>
+        <text class="txt" x="150" y="160" style="fill:var(--red);font-size:20px">+</text>
+        <text class="txt" x="150" y="214" style="fill:var(--blue);font-size:22px">–</text>
+        <text class="txt-s" x="30" y="185">Générateur</text>
+        <!-- L1 -->
+        <circle class="comp" cx="320" cy="180" r="30"/>
+        <line class="ln" x1="299" y1="159" x2="341" y2="201"/><line class="ln" x1="341" y1="159" x2="299" y2="201"/>
+        <text class="txt-s" x="358" y="185">L1</text>
+        <!-- L2 -->
+        <circle class="comp" cx="520" cy="180" r="30"/>
+        <line class="ln" x1="499" y1="159" x2="541" y2="201"/><line class="ln" x1="541" y1="159" x2="499" y2="201"/>
+        <text class="txt-s" x="558" y="185">L2</text>
+      </g>
+      <g id="d2-serie" style="display:none">
+        <path class="wire" d="M120 60 V150 M120 210 V300 H520 V210 M520 150 V60 H120"/>
+        <rect x="96" y="150" width="48" height="60" fill="var(--card)" stroke="none"/>
+        <line class="ln" x1="100" y1="152" x2="140" y2="152"/>
+        <line class="ln" x1="110" y1="208" x2="130" y2="208" style="stroke-width:8"/>
+        <text class="txt" x="150" y="160" style="fill:var(--red);font-size:20px">+</text>
+        <text class="txt" x="150" y="214" style="fill:var(--blue);font-size:22px">–</text>
+        <text class="txt-s" x="30" y="185">Générateur</text>
+        <circle class="comp" cx="320" cy="60" r="30"/>
+        <line class="ln" x1="299" y1="39" x2="341" y2="81"/><line class="ln" x1="341" y1="39" x2="299" y2="81"/>
+        <text class="txt-s" x="300" y="22">L1</text>
+        <circle class="comp" cx="520" cy="180" r="30"/>
+        <line class="ln" x1="499" y1="159" x2="541" y2="201"/><line class="ln" x1="541" y1="159" x2="499" y2="201"/>
+        <text class="txt-s" x="558" y="185">L2</text>
+      </g>
+      <path id="d2-hl" class="hl" pathLength="1" d="" />
+      <g id="d2-halo"></g>
+      <g id="d2-dots"></g>
+      <g id="d2-points"></g>
+    </svg>
+    <div class="say" id="d2-say" aria-live="polite"></div>
+    <div id="d2-ctl" class="controls"></div>
+  </div>
+  <div class="panel" id="d2-panel"></div>
+</section>
+
+<!-- ============================ DOC 3 ============================ -->
+<section class="doc" id="doc-3" role="tabpanel" aria-labelledby="t-doc-3" hidden>
+  <div class="stage">
+    <h2>Doc. 3 · Les symboles normalisés</h2>
+    <div class="seg" role="group" aria-label="Activité">
+      <button class="btn" id="d3-m-cards" aria-pressed="true">Cartes des symboles</button>
+      <button class="btn" id="d3-m-class" aria-pressed="false">Classer</button>
+      
+    </div>
+    <div id="d3-cards">
+      <div class="card3" id="d3-card" aria-live="polite"></div>
+      <div class="controls">
+        <button class="btn" id="d3-prev">Précédent</button>
+        <button class="btn alt big" id="d3-flip" aria-pressed="false">Voir le nom</button>
+        <button class="btn" id="d3-next">Suivant</button>
+        <span class="hint" id="d3-count" style="align-self:center"></span>
+      </div>
+    </div>
+    <div id="d3-class" hidden>
+      <div class="card3" id="d3-ccard" aria-live="polite"></div>
+      <div class="controls" id="d3-cctl"></div>
+    </div>
+    <div id="d3-circ" hidden>
+      <svg id="d3svg" viewBox="0 0 640 320" role="img" aria-label="Circuit en série : pile, interrupteur, lampe, moteur, résistance">
+        <path class="wire" d="M80 130 V60 H200 M260 60 H360 M440 60 H560 V130 M560 190 V260 H380 M260 260 H80 V190"/>
+        <g id="d3-dots"></g>
+        <!-- pile -->
+        <rect x="56" y="130" width="48" height="60" fill="var(--card)" stroke="none"/>
+        <line class="ln" x1="60" y1="132" x2="100" y2="132"/>
+        <line class="ln" x1="70" y1="188" x2="90" y2="188" style="stroke-width:8"/>
+        <text class="txt" x="110" y="140" style="fill:var(--red);font-size:20px">+</text>
+        <text class="txt" x="110" y="194" style="fill:var(--blue);font-size:22px">–</text>
+        <g class="clickable" data-comp="pile"><rect x="40" y="120" width="90" height="80" fill="transparent"/></g>
+        <!-- interrupteur -->
+        <circle class="pt" cx="200" cy="60" r="5"/><circle class="pt" cx="260" cy="60" r="5"/>
+        <line id="d3-sw" class="wire" x1="200" y1="60" x2="260" y2="60"/>
+        <g class="clickable" data-comp="inter"><rect x="185" y="20" width="90" height="60" fill="transparent"/></g>
+        <!-- lampe -->
+        <circle id="d3-glow" cx="400" cy="60" r="52" fill="var(--yellow)" opacity="0"/>
+        <circle class="comp" cx="400" cy="60" r="30"/>
+        <line class="ln" x1="379" y1="39" x2="421" y2="81"/><line class="ln" x1="421" y1="39" x2="379" y2="81"/>
+        <g class="clickable" data-comp="lampe"><rect x="360" y="20" width="80" height="80" fill="transparent"/></g>
+        <!-- moteur -->
+        <circle class="comp" cx="560" cy="160" r="30"/>
+        <g id="d3-rot" transform="translate(560 160)"><line class="ln" x1="-16" y1="0" x2="16" y2="0"/><line class="ln" x1="0" y1="-16" x2="0" y2="16"/><circle r="4" fill="var(--wire)"/></g>
+        <text class="txt" x="553" y="166" style="font-size:0"> </text>
+        <g class="clickable" data-comp="moteur"><rect x="520" y="120" width="80" height="80" fill="transparent"/></g>
+        <!-- résistance -->
+        <rect class="comp" x="260" y="245" width="120" height="30"/>
+        <g class="clickable" data-comp="resistance"><rect x="250" y="230" width="140" height="60" fill="transparent"/></g>
+        <!-- étiquettes -->
+        <text class="txt-s" x="52" y="225">Pile</text><text class="txt-s" x="196" y="110">Interrupteur</text>
+        <text class="txt-s" x="385" y="108">Lampe</text><text class="txt-s" x="540" y="214">Moteur</text><text class="txt-s" x="292" y="300">Résistance</text>
+      </svg>
+      <div class="controls">
+        <button class="btn alt big" id="d3-sw-btn" aria-pressed="true">Ouvrir l'interrupteur</button>
+      </div>
+      <div class="legend"><span><i style="background:var(--red)"></i>sens conventionnel du courant</span><span>Clique sur un composant pour lire son rôle.</span></div>
+      <div class="say" id="d3-say" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <p><b>Générateur</b> : fournit une puissance. <b>Récepteur</b> : reçoit une puissance.</p>
+  </div>
+</section>
+
+<!-- ============================ DOC 4 ============================ -->
+<section class="doc" id="doc-4" role="tabpanel" aria-labelledby="t-doc-4" hidden>
+  <div class="stage">
+    <h2>Doc. 4 · Les conventions générateur et récepteur</h2>
+    <div class="seg" role="group" aria-label="Convention">
+      <button class="btn" id="d4-gen" aria-pressed="true">Convention générateur</button>
+      <button class="btn" id="d4-rec" aria-pressed="false">Convention récepteur</button>
+      <button class="btn alt" id="d4-quiz" aria-pressed="false">À toi de jouer</button>
+    </div>
+    <svg id="d4svg" viewBox="0 0 640 300" role="img" aria-label="Dipôle avec la flèche de la tension U et la flèche du courant I">
+      <path class="wire" id="d4-wires" d=""/>
+      <g id="d4-dots"></g>
+      <g id="d4-sym"></g>
+      <g id="d4-arrows"></g>
+    </svg>
+    <div class="say" id="d4-say" aria-live="polite"></div>
+    <div id="d4-ctl" class="controls"></div>
+  </div>
+  <div class="panel">
+    <p><b>U</b> : flèche verte. <b>I</b> : flèche rouge.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+(function(){
+'use strict';
+var NS='http://www.w3.org/2000/svg';
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs){e.setAttribute(k,attrs[k]);}if(parent)parent.appendChild(e);return e;}
+function css(v){return 'var(--'+v+')';}
+
+/* ---------- boucle d'animation ---------- */
+var ticks=[];
+var paused=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var last=performance.now();
+function loop(t){var dt=Math.min(0.05,(t-last)/1000);last=t;if(!paused){for(var i=0;i<ticks.length;i++)ticks[i](dt);}requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+var pauseBtn=$('#pause');
+function syncPause(){pauseBtn.textContent=paused?'Reprendre':'Mettre en pause';pauseBtn.setAttribute('aria-pressed',paused?'true':'false');}
+pauseBtn.addEventListener('click',function(){paused=!paused;syncPause();});
+syncPause();
+function shown(id){return !document.getElementById(id).hidden;}
+
+/* ---------- chemins ---------- */
+function makePath(pts){
+  var segs=[],L=0,i;
+  for(i=0;i<pts.length-1;i++){var a=pts[i],b=pts[i+1],l=Math.hypot(b[0]-a[0],b[1]-a[1]);segs.push({a:a,b:b,l:l,s0:L,i:i});L+=l;}
+  return {len:L,segs:segs,at:function(s){
+    s=((s%L)+L)%L;
+    for(var j=0;j<segs.length;j++){var g=segs[j];if(s<=g.s0+g.l){var t=g.l?(s-g.s0)/g.l:0;return {x:g.a[0]+(g.b[0]-g.a[0])*t,y:g.a[1]+(g.b[1]-g.a[1])*t,seg:g.i};}}
+    var e=segs[segs.length-1];return {x:e.b[0],y:e.b[1],seg:e.i};}};
+}
+function ptsToD(pts){return pts.map(function(p,i){return (i?'L':'M')+p[0]+' '+p[1];}).join(' ');}
+
+/* ---------- navigation par onglets ---------- */
+var docs=['doc-1','doc-2','doc-3','doc-4'];
+function showDoc(id){
+  if(docs.indexOf(id)<0)id='doc-1';
+  docs.forEach(function(d){
+    var on=d===id;document.getElementById(d).hidden=!on;
+    var t=document.getElementById('t-'+d);t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;
+  });
+}
+$$('.tab').forEach(function(t){t.addEventListener('click',function(){var id=t.getAttribute('data-doc');showDoc(id);try{history.replaceState(null,'','#'+id);}catch(e){location.hash=id;}});});
+window.addEventListener('hashchange',function(){showDoc(location.hash.replace('#',''));});
+showDoc(location.hash.replace('#','')||'doc-1');
+
+/* ---------- symboles (viewBox 0 0 120 50) ---------- */
+var SYM={
+ pv:'<line x1="0" y1="25" x2="38" y2="25"/><rect class="f" x="38" y="8" width="44" height="34"/><line x1="38" y1="25" x2="82" y2="25"/><line x1="60" y1="8" x2="60" y2="42"/><line x1="82" y1="25" x2="120" y2="25"/><line x1="90" y1="4" x2="100" y2="14"/><line x1="98" y1="2" x2="108" y2="12"/>',
+ pile:'<line x1="0" y1="27" x2="52" y2="27"/><line x1="52" y1="8" x2="52" y2="46"/><line x1="65" y1="17" x2="65" y2="37" style="stroke-width:8"/><line x1="65" y1="27" x2="120" y2="27"/><text x="38" y="12" style="fill:var(--red)">+</text><text x="70" y="12" style="fill:var(--blue)">–</text>',
+ generateur:'<line x1="0" y1="25" x2="42" y2="25"/><circle class="f" cx="60" cy="25" r="18"/><text x="52" y="31">G</text><line x1="78" y1="25" x2="120" y2="25"/>',
+ lampe:'<line x1="0" y1="25" x2="42" y2="25"/><circle class="f" cx="60" cy="25" r="18"/><line x1="47" y1="12" x2="73" y2="38"/><line x1="73" y1="12" x2="47" y2="38"/><line x1="78" y1="25" x2="120" y2="25"/>',
+ moteur:'<line x1="0" y1="25" x2="42" y2="25"/><circle class="f" cx="60" cy="25" r="18"/><text x="50" y="31">M</text><line x1="78" y1="25" x2="120" y2="25"/>',
+ resistance:'<line x1="0" y1="25" x2="35" y2="25"/><rect class="f" x="35" y="15" width="50" height="20"/><line x1="85" y1="25" x2="120" y2="25"/>',
+ diode:'<line x1="0" y1="25" x2="45" y2="25"/><polygon class="f" points="45,9 45,41 75,25"/><line x1="75" y1="9" x2="75" y2="41"/><line x1="75" y1="25" x2="120" y2="25"/>',
+ del:'<line x1="0" y1="30" x2="45" y2="30"/><polygon class="f" points="45,14 45,46 75,30"/><line x1="75" y1="14" x2="75" y2="46"/><line x1="75" y1="30" x2="120" y2="30"/><line x1="58" y1="12" x2="70" y2="2"/><line x1="70" y1="2" x2="64" y2="3"/><line x1="70" y1="2" x2="69" y2="8"/><line x1="70" y1="16" x2="82" y2="6"/><line x1="82" y1="6" x2="76" y2="7"/><line x1="82" y1="6" x2="81" y2="12"/>',
+ inter_o:'<line x1="0" y1="35" x2="35" y2="35"/><circle class="f" cx="35" cy="35" r="2.5"/><line x1="35" y1="35" x2="80" y2="12"/><circle class="f" cx="85" cy="35" r="2.5"/><line x1="85" y1="35" x2="120" y2="35"/>',
+ inter_f:'<line x1="0" y1="35" x2="35" y2="35"/><circle class="f" cx="35" cy="35" r="2.5"/><line x1="35" y1="35" x2="83" y2="33"/><circle class="f" cx="85" cy="35" r="2.5"/><line x1="85" y1="35" x2="120" y2="35"/>',
+ fil:'<line x1="0" y1="25" x2="120" y2="25"/>'
+};
+function symSvg(key){return '<svg class="sym" viewBox="0 0 120 50" aria-hidden="true">'+SYM[key]+'</svg>';}
+
+/* =================================================================
+   DOC 1
+   ================================================================= */
+(function(){
+  var state={closed:true,mode:'metal'};
+  var metal=makePath([[120,170],[120,60],[520,60],[520,280],[120,280],[120,170]]);
+  var NE=22,eM=[],gM=$('#d1-eM'),i;
+  for(i=0;i<NE;i++){
+    var g=el('g',{},gM);el('circle',{r:8,fill:css('blue')},g);
+    var t=el('text',{'text-anchor':'middle',y:4.5,fill:'#fff','font-size':13,'font-weight':700,'font-family':'Lexend,sans-serif'},g);t.textContent='–';
+    eM.push({g:g,s:i*metal.len/NE});
+  }
+  /* flèches du sens conventionnel */
+  var arr=$('#d1-arrM');
+  [[120,112,-90],[205,60,0],[435,60,0],[520,110,90],[520,240,90],[320,280,180],[120,235,-90]].forEach(function(a){
+    var g=el('g',{transform:'translate('+a[0]+' '+a[1]+') rotate('+a[2]+')'},arr);
+    el('polygon',{points:'-9,-10 11,0 -9,10',fill:css('red'),stroke:css('card'),'stroke-width':2},g);
+  });
+  /* solution */
+  var sol=makePath([[192,50],[120,50],[120,150],[520,150],[520,50],[208,50],[192,50]]);
+  var NS2=14,eS=[],gS=$('#d1-eS');
+  for(i=0;i<NS2;i++){
+    var g2=el('g',{},gS);el('circle',{r:8,fill:css('blue')},g2);
+    var t2=el('text',{'text-anchor':'middle',y:4.5,fill:'#fff','font-size':13,'font-weight':700,'font-family':'Lexend,sans-serif'},g2);t2.textContent='–';
+    eS.push({g:g2,s:i*sol.len/NS2});
+  }
+  var ions=[],gI=$('#d1-ions');
+  function rnd(n){var x=Math.sin(n*12.9898)*43758.5453;return x-Math.floor(x);}
+  for(i=0;i<16;i++){
+    var cat=i%2===0;
+    var g3=el('g',{},gI);
+    el('circle',{r:11,fill:cat?css('red'):css('green'),stroke:css('card'),'stroke-width':1.5},g3);
+    var t3=el('text',{'text-anchor':'middle',y:5,fill:'#fff','font-size':16,'font-weight':700,'font-family':'Lexend,sans-serif'},g3);t3.textContent=cat?'+':'–';
+    ions.push({g:g3,x:150+rnd(i+1)*340,y:170+rnd(i+40)*120,cat:cat,ph:rnd(i+7)*6.28});
+  }
+  var v=95,t0=0;
+  function place(){
+    eM.forEach(function(e){
+      var p=metal.at(e.s);var hide=false;
+      if(p.x>292&&p.x<348&&Math.abs(p.y-60)<2&&!state.closed)hide=true;
+      if(Math.abs(p.x-120)<2&&p.y>148&&p.y<192)hide=true;
+      if(Math.hypot(p.x-520,p.y-170)<31)hide=true;
+      e.g.setAttribute('transform','translate('+p.x+' '+p.y+')');e.g.style.display=hide?'none':'';
+    });
+    eS.forEach(function(e){
+      var p=sol.at(e.s);var hide=false;
+      if(p.seg===2)hide=true;
+      if(p.y<52&&p.x>292&&p.x<368&&!state.closed)hide=true;
+      if(p.y<52&&p.x>190&&p.x<210)hide=true;
+      if(p.y<52&&p.x>392&&p.x<448)hide=true;
+      e.g.setAttribute('transform','translate('+p.x+' '+p.y+')');e.g.style.display=hide?'none':'';
+    });
+    ions.forEach(function(n){n.g.setAttribute('transform','translate('+n.x+' '+(n.y+Math.sin(t0*1.6+n.ph)*5)+')');});
+  }
+  ticks.push(function(dt){
+    if(!shown('doc-1'))return;
+    t0+=dt;
+    if(state.closed){
+      eM.forEach(function(e){e.s-=v*dt;});
+      eS.forEach(function(e){e.s-=v*dt;});
+      ions.forEach(function(n){n.x+=(n.cat?-1:1)*38*dt;if(n.x<145)n.x=495;if(n.x>495)n.x=145;});
+    }
+    place();
+  });
+  function render(){
+    var c=state.closed,m=state.mode==='metal';
+    $('#d1-metal').style.display=m?'':'none';$('#d1-sol').style.display=m?'none':'';
+    $('#d1-leg-metal').hidden=!m;$('#d1-leg-sol').hidden=m;
+    $('#d1-m-metal').setAttribute('aria-pressed',m?'true':'false');$('#d1-m-sol').setAttribute('aria-pressed',m?'false':'true');
+    var sw=$('#d1-sw');sw.setAttribute('aria-pressed',c?'true':'false');sw.textContent=c?"Ouvrir l'interrupteur":"Fermer l'interrupteur";
+    /* interrupteurs */
+    var a=$('#d1-swM'),b=$('#d1-swS');
+    if(c){a.setAttribute('x2',350);a.setAttribute('y2',60);b.setAttribute('x2',360);b.setAttribute('y2',50);}
+    else{a.setAttribute('x2',338);a.setAttribute('y2',24);b.setAttribute('x2',348);b.setAttribute('y2',14);}
+    $('#d1-glowM').setAttribute('opacity',c?0.5:0);$('#d1-glowS').setAttribute('opacity',c?0.5:0);
+    $('#d1-arrM').style.opacity=c?1:0.25;$('#d1-bigarrows').style.opacity=c?0.7:0.2;
+    var say=$('#d1-say');
+    if(c){say.className='say';say.textContent=m?"Les électrons vont de – vers +. Le courant conventionnel va de + vers –.":"Les cations (+) vont vers la gauche, les anions (–) vers la droite.";}
+    else{say.className='say warn';say.textContent="Circuit ouvert : plus de courant.";}
+    $('#c-closed').className='chip '+(c?'ok':'no');
+    $('#c-closed').textContent=(c?'✔ ':'✘ ')+'Un circuit fermé';
+    ['c-gen','c-cond','c-rec'].forEach(function(id){var n=$('#'+id);n.className='chip '+(c?'ok':'no');n.textContent=(c?'✔ ':'✘ ')+n.textContent.replace(/^[✔✘]\s/,'');});
+    $('#c-gen').className='chip ok';$('#c-gen').textContent='✔ Un générateur';
+    $('#c-cond').className='chip ok';$('#c-cond').textContent='✔ Des matériaux conducteurs';
+    $('#c-rec').className='chip ok';$('#c-rec').textContent='✔ Un récepteur';
+    place();
+  }
+  $('#d1-sw').addEventListener('click',function(){state.closed=!state.closed;render();});
+  $('#d1-m-metal').addEventListener('click',function(){state.mode='metal';render();});
+  $('#d1-m-sol').addEventListener('click',function(){state.mode='sol';render();});
+  render();
+})();
+
+/* =================================================================
+   DOC 2 : vocabulaire
+   ================================================================= */
+(function(){
+  var P={A:[120,300],B:[120,60],C:[320,60],D:[520,60],E:[520,300],F:[320,300]};
+  var WIRES={A:2,B:2,C:3,D:2,E:2,F:3};
+  function pts(names){return names.map(function(n){return P[n];});}
+  var MAILLES=[
+    {id:'ABCFA',route:['A','B','C','F','A'],col:'teal',txt:"La maille ABCFA passe par le générateur et par la lampe L1."},
+    {id:'FCDEF',route:['F','C','D','E','F'],col:'amber',txt:"La maille FCDEF passe par la lampe L1 et par la lampe L2."},
+    {id:'ABDEA',route:['A','B','C','D','E','F','A'],col:'green',txt:"La maille ABDEA fait le tour extérieur : générateur et lampe L2. Elle passe par C et F, mais on ne les écrit pas dans son nom."}
+  ];
+  var BRANCHES=[
+    {id:'Branche 1',route:['F','A','B','C'],col:'teal',txt:"Branche 1 : le générateur."},
+    {id:'Branche 2',route:['C','F'],col:'amber',txt:"Branche 2 : la lampe L1."},
+    {id:'Branche 3',route:['C','D','E','F'],col:'green',txt:"Branche 3 : la lampe L2."}
+  ];
+  var SERIE_PTS=[[120,300],[120,60],[520,60],[520,300],[120,300]];
+  var state={mode:'mailles',idx:0,circ:'deriv',found:{},playing:null,path:null,off:0};
+  var hl=$('#d2-hl'),dotsG=$('#d2-dots'),haloG=$('#d2-halo'),ptsG=$('#d2-points');
+  var dots=[],i;
+  for(i=0;i<3;i++){dots.push(el('circle',{r:8,fill:css('card'),stroke:css('ink'),'stroke-width':3,style:'display:none'},dotsG));}
+  /* points A..F */
+  var pointEls={};
+  Object.keys(P).forEach(function(k){
+    var g=el('g',{'class':'clickable',tabindex:0,role:'button','aria-label':'Point '+k},ptsG);
+    el('circle',{cx:P[k][0],cy:P[k][1],r:16,fill:'transparent'},g);
+    el('circle',{cx:P[k][0],cy:P[k][1],r:8,'class':'pt'},g);
+    var off={A:[-22,22],B:[-22,-12],C:[0,-20],D:[22,-12],E:[22,24],F:[0,32]}[k];
+    var t=el('text',{x:P[k][0]+off[0],y:P[k][1]+off[1],'text-anchor':'middle','class':'pt-l'},g);t.textContent=k;
+    pointEls[k]=g;
+    function act(){if(state.mode!=='serie')pointClick(k);}
+    g.addEventListener('click',act);
+    g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();act();}});
+  });
+  function clearHalo(){while(haloG.firstChild)haloG.removeChild(haloG.firstChild);}
+  function setPath(p,col){
+    var pl=makePath(p);state.path=pl;
+    hl.setAttribute('d',ptsToD(p));hl.setAttribute('stroke',css(col));
+    hl.setAttribute('class','hl');void hl.getBBox();hl.setAttribute('class','hl draw');
+    state.off=0;dots.forEach(function(d){d.style.display='';d.setAttribute('fill',css(col));});
+  }
+  function noPath(){state.path=null;hl.setAttribute('d','');dots.forEach(function(d){d.style.display='none';});}
+  var sp=150;
+  ticks.push(function(dt){
+    if(!shown('doc-2'))return;
+    if(state.path){
+      state.off+=sp*dt;
+      var L=state.path.len;
+      dots.forEach(function(d,k){var p=state.path.at(state.off+k*L/3);d.setAttribute('cx',p.x);d.setAttribute('cy',p.y);});
+    }
+    /* halo qui pulse */
+    var h=haloG.children;
+    for(var k=0;k<h.length;k++){var ph=(performance.now()/700+k*0.5)%1;h[k].setAttribute('r',14+ph*18);h[k].setAttribute('opacity',0.7*(1-ph));}
+  });
+  function pointClick(k){
+    var n=WIRES[k],say=$('#d2-say');
+    
+    if(state.mode!=='noeuds'){state.mode='noeuds';state.idx=0;render();}
+    clearHalo();
+    el('circle',{cx:P[k][0],cy:P[k][1],r:14,fill:'none',stroke:n>=3?css('green'):css('red'),'stroke-width':4},haloG);
+    state.found[k]=true;
+    if(n>=3){say.className='say';say.textContent='Point '+k+' : '+n+' fils. C\'est un nœud ✔';}
+    else{say.className='say warn';say.textContent='Point '+k+' : '+n+' fils. Pas un nœud ✘';}
+  }
+  function renderPanel(){
+    var p=$('#d2-panel'),h='';
+    var defs={
+      mailles:'<p><b>Maille</b> : boucle fermée.</p>',
+      noeuds:'<p><b>Nœud</b> : au moins 3 fils se rejoignent.</p>',
+      branches:'<p><b>Branche</b> : partie entre deux nœuds.</p>',
+      serie:'<p><b>Série</b> : 1 maille. <b>Dérivation</b> : au moins 2 mailles.</p>'
+    };
+    p.innerHTML=h+defs[state.mode];
+  }
+  function render(){
+    $$('#d2-modes .btn').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-mode')===state.mode?'true':'false');});
+    var ctl=$('#d2-ctl'),say=$('#d2-say');ctl.innerHTML='';clearHalo();noPath();
+    $('#d2-deriv').style.display=state.circ==='deriv'?'':'none';$('#d2-serie').style.display=state.circ==='serie'?'':'none';
+    ptsG.style.display=(state.circ==='deriv')?'':'none';
+    function mk(label,fn,pressed,cls){var b=document.createElement('button');b.className='btn'+(cls?' '+cls:'');b.textContent=label;if(pressed!==undefined)b.setAttribute('aria-pressed',pressed?'true':'false');b.addEventListener('click',fn);ctl.appendChild(b);return b;}
+    say.className='say';
+    if(state.mode==='mailles'){
+      state.circ='deriv';$('#d2-deriv').style.display='';$('#d2-serie').style.display='none';ptsG.style.display='';
+      MAILLES.forEach(function(m,k){mk('Maille '+m.id,function(){state.idx=k;showMaille();},k===state.idx);});
+      showMaille();
+    }else if(state.mode==='noeuds'){
+      state.circ='deriv';$('#d2-deriv').style.display='';$('#d2-serie').style.display='none';ptsG.style.display='';
+      mk('Montrer les nœuds',function(){clearHalo();['C','F'].forEach(function(k){el('circle',{cx:P[k][0],cy:P[k][1],r:14,fill:'none',stroke:css('green'),'stroke-width':4},haloG);});say.className='say';say.textContent='C et F sont des nœuds.';});
+      say.textContent='Clique sur un point.';
+    }else if(state.mode==='branches'){
+      state.circ='deriv';$('#d2-deriv').style.display='';$('#d2-serie').style.display='none';ptsG.style.display='';
+      BRANCHES.forEach(function(m,k){mk(m.id,function(){state.idx=k;showBranche();},k===state.idx);});
+      showBranche();
+    }else if(state.mode==='serie'){
+      mk('Circuit en série',function(){state.circ='serie';render();},state.circ==='serie');
+      mk('Circuit en dérivation',function(){state.circ='deriv';render();},state.circ==='deriv');
+      $('#d2-deriv').style.display=state.circ==='deriv'?'':'none';$('#d2-serie').style.display=state.circ==='serie'?'':'none';
+      ptsG.style.display='none';
+      if(state.circ==='serie'){
+        setPath(SERIE_PTS,'teal');
+        say.textContent='Série : 1 maille.';
+      }else{
+        showMaille(true);
+        say.textContent='Dérivation : 3 mailles.';
+        mk('Voir une autre maille',function(){state.idx=(state.idx+1)%3;showMaille(true);},undefined,'alt');
+      }
+    }
+    renderPanel();
+  }
+  function showMaille(keep){
+    var m=MAILLES[state.idx];setPath(pts(m.route),m.col);
+    $$('#d2-ctl .btn').forEach(function(b){if(/^Maille /.test(b.textContent))b.setAttribute('aria-pressed',b.textContent==='Maille '+m.id?'true':'false');});
+    var say=$('#d2-say');say.className='say';say.textContent=m.id.split('').join(' → ');
+  }
+  function showBranche(){
+    var m=BRANCHES[state.idx];setPath(pts(m.route),m.col);
+    $$('#d2-ctl .btn').forEach(function(b){b.setAttribute('aria-pressed',b.textContent===m.id?'true':'false');});
+    ['C','F'].forEach(function(k){el('circle',{cx:P[k][0],cy:P[k][1],r:14,fill:'none',stroke:css('ink'),'stroke-width':3},haloG);});
+    var say=$('#d2-say');say.className='say';say.textContent=m.txt;
+  }
+  $$('#d2-modes .btn').forEach(function(b){b.addEventListener('click',function(){state.mode=b.getAttribute('data-mode');state.idx=0;render();});});
+  render();
+})();
+
+/* =================================================================
+   DOC 3 : symboles
+   ================================================================= */
+(function(){
+  var CARDS=[
+   {k:'pile',n:'Pile',r:'Fournit une tension électrique.',c:'g'},
+   {k:'generateur',n:'Générateur',r:'Fournit une puissance électrique au circuit.',c:'g'},
+   {k:'lampe',n:'Lampe',r:"S'allume lorsqu'il y a un courant.",c:'r'},
+   {k:'moteur',n:'Moteur',r:'Se met en mouvement grâce au courant.',c:'r'},
+   {k:'resistance',n:'Résistance',r:'Limite le courant.',c:'r'},
+   {k:'diode',n:'Diode',r:'Ne laisse passer le courant que dans un sens.',c:'r'},
+   {k:'del',n:'DEL (diode électroluminescente)',r:'Une diode qui émet de la lumière.',c:'r'},
+   {k:'inter_o',n:'Interrupteur ouvert',r:'Le circuit est coupé : le courant ne passe pas.',c:'o'},
+   {k:'inter_f',n:'Interrupteur fermé',r:'Le circuit est fermé : le courant passe.',c:'o'},
+   {k:'fil',n:'Fil de connexion',r:'Relie les composants.',c:'o'}
+  ];
+  var CAT={g:['Générateur','g'],r:['Récepteur','r'],o:['Autre élément du circuit','o']};
+  var idx=0,flipped=false;
+  var card=$('#d3-card');
+  function renderCard(){
+    var c=CARDS[idx];
+    var h=symSvg(c.k);
+    if(flipped){h+='<p class="name">'+c.n+'</p><span class="badge '+CAT[c.c][1]+'">'+CAT[c.c][0]+'</span><p class="role">'+c.r+'</p>';}
+    else{h+='';}
+    card.innerHTML=h;
+    $('#d3-flip').textContent=flipped?'Cacher le nom':'Voir le nom';$('#d3-flip').setAttribute('aria-pressed',flipped?'true':'false');
+    $('#d3-count').textContent=(idx+1)+' / '+CARDS.length;
+  }
+  $('#d3-flip').addEventListener('click',function(){flipped=!flipped;renderCard();});
+  $('#d3-next').addEventListener('click',function(){idx=(idx+1)%CARDS.length;flipped=false;renderCard();});
+  $('#d3-prev').addEventListener('click',function(){idx=(idx+CARDS.length-1)%CARDS.length;flipped=false;renderCard();});
+  renderCard();
+  /* mode */
+  function mode(m){
+    $('#d3-cards').hidden=m!=='cards';$('#d3-circ').hidden=m!=='circ';$('#d3-class').hidden=m!=='class';
+    $('#d3-m-cards').setAttribute('aria-pressed',m==='cards'?'true':'false');$('#d3-m-class').setAttribute('aria-pressed',m==='class'?'true':'false');
+    if(m==='class'){ci=0;score=0;renderClass();}
+  }
+  var CL=[{k:'pile',n:'Pile',g:true},{k:'lampe',n:'Lampe',g:false},{k:'resistance',n:'Résistance',g:false},{k:'pv',n:'Cellule photovoltaïque',g:true},{k:'diode',n:'Diode',g:false},{k:'moteur',n:'Moteur',g:false}];
+  var ci=0,score=0;
+  function renderClass(){
+    var card=$('#d3-ccard'),ctl=$('#d3-cctl');ctl.innerHTML='';
+    if(ci>=CL.length){
+      card.innerHTML='<p class="name">Bien joué !</p><p class="role">'+score+' / '+CL.length+'</p>';
+      var again=document.createElement('button');again.className='btn alt big';again.textContent='Recommencer';again.addEventListener('click',function(){ci=0;score=0;renderClass();});ctl.appendChild(again);return;
+    }
+    var c=CL[ci];
+    card.innerHTML=symSvg(c.k)+'<p class="name">'+c.n+'</p><p class="role" style="color:var(--muted)">'+(ci+1)+' / '+CL.length+'</p><p class="role" id="d3-cfb"></p>';
+    var answered=false;
+    [['Générateur',true],['Récepteur',false]].forEach(function(o){
+      var b=document.createElement('button');b.className='btn big';b.textContent=o[0];
+      b.addEventListener('click',function(){
+        if(answered)return;answered=true;
+        var ok=o[1]===c.g,fb=$('#d3-cfb');if(ok)score++;
+        fb.style.color=ok?'var(--green)':'var(--red)';
+        fb.textContent=(ok?'Exact : ':'Non : ')+(c.g?'générateur.':'récepteur.');
+        var nx=document.createElement('button');nx.className='btn alt big';nx.textContent='Suivant';nx.addEventListener('click',function(){ci++;renderClass();});ctl.appendChild(nx);
+      });ctl.appendChild(b);
+    });
+  }
+  $('#d3-m-class').addEventListener('click',function(){mode('class');});
+  $('#d3-m-cards').addEventListener('click',function(){mode('cards');});
+  
+  /* circuit */
+  var closed=true;
+  var loopP=makePath([[80,160],[80,60],[560,60],[560,260],[80,260],[80,160]]);
+  var gD=$('#d3-dots'),ds=[],N=26,i;
+  for(i=0;i<N;i++){var g=el('g',{},gD);el('polygon',{points:'-6,-7 8,0 -6,7',fill:css('red')},g);ds.push({g:g,s:i*loopP.len/N});}
+  var rot=0;
+  function inComp(p){
+    if(Math.abs(p.x-80)<2&&p.y>128&&p.y<192)return true;
+    if(Math.hypot(p.x-400,p.y-60)<31)return true;
+    if(Math.hypot(p.x-560,p.y-160)<31)return true;
+    if(p.y>258&&p.x>258&&p.x<382)return true;
+    if(!closed&&p.y<62&&p.x>198&&p.x<262)return true;
+    return false;
+  }
+  function placeDots(){
+    ds.forEach(function(d){
+      var p=loopP.at(d.s),s=loopP.segs[p.seg],ang=Math.atan2(s.b[1]-s.a[1],s.b[0]-s.a[0])*180/Math.PI;
+      d.g.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+ang+')');d.g.style.display=inComp(p)?'none':'';
+    });
+  }
+  ticks.push(function(dt){
+    if(!shown('doc-3')||$('#d3-circ').hidden)return;
+    if(closed){ds.forEach(function(d){d.s+=110*dt;});rot+=220*dt;$('#d3-rot').setAttribute('transform','translate(560 160) rotate('+rot+')');}
+    placeDots();
+  });
+  var ROLES={pile:'Pile : fournit une tension électrique. C\'est le générateur du circuit.',inter:'Interrupteur : il ouvre ou ferme le circuit.',lampe:"Lampe : elle s'allume lorsqu'il y a un courant. C'est un récepteur.",moteur:'Moteur : il se met en mouvement grâce au courant. C\'est un récepteur.',resistance:'Résistance : elle limite le courant. C\'est un récepteur.'};
+  function renderC(){
+    var b=$('#d3-sw-btn');b.setAttribute('aria-pressed',closed?'true':'false');b.textContent=closed?"Ouvrir l'interrupteur":"Fermer l'interrupteur";
+    var sw=$('#d3-sw');
+    if(closed){sw.setAttribute('x2',260);sw.setAttribute('y2',60);}else{sw.setAttribute('x2',250);sw.setAttribute('y2',24);}
+    $('#d3-glow').setAttribute('opacity',closed?0.5:0);
+    var s=$('#d3-say');
+    if(!s.getAttribute('data-role')){s.className=closed?'say':'say warn';s.textContent=closed?'Le circuit est fermé : la lampe brille et le moteur tourne.':"Le circuit est ouvert : la lampe est éteinte et le moteur s'arrête.";}
+    placeDots();
+  }
+  $('#d3-sw-btn').addEventListener('click',function(){closed=!closed;$('#d3-say').removeAttribute('data-role');renderC();});
+  $$('#d3svg [data-comp]').forEach(function(g){g.addEventListener('click',function(){
+    var k=g.getAttribute('data-comp');
+    if(k==='inter'){closed=!closed;$('#d3-say').removeAttribute('data-role');renderC();return;}
+    var s=$('#d3-say');s.className='say';s.setAttribute('data-role',k);s.textContent=ROLES[k];
+  });});
+  renderC();
+})();
+
+/* =================================================================
+   DOC 4 : conventions
+   ================================================================= */
+(function(){
+  var gen=true,quiz=false,qi=0,answered=false,dir=-1; /* dir : sens de I (-1 gauche, +1 droite) */
+  var wires=$('#d4-wires'),symG=$('#d4-sym'),arrG=$('#d4-arrows'),dotsG=$('#d4-dots');
+  var QZ=[
+   {n:'Pile',k:'pile',gen:true},{n:'Lampe',k:'lampe',gen:false},{n:'Moteur',k:'moteur',gen:false},
+   {n:'Cellule photovoltaïque',k:'pv',gen:true},{n:'Résistance',k:'resistance',gen:false}
+  ];
+  var ds=[],i,N=16;
+  for(i=0;i<N;i++){var g=el('g',{},dotsG);el('polygon',{points:'-6,-7 8,0 -6,7',fill:css('red')},g);ds.push({g:g,x:60+i*(520/N)});}
+  var arrowSvg=function(x1,x2,y,col,label,lx,ly){
+    var d=x2>x1?1:-1,ex=x2;
+    var h='<line x1="'+x1+'" y1="'+y+'" x2="'+(ex-d*6)+'" y2="'+y+'" stroke="'+css(col)+'" stroke-width="6" stroke-linecap="round"/>'
+     +'<polygon points="'+ex+','+y+' '+(ex-d*20)+','+(y-12)+' '+(ex-d*20)+','+(y+12)+'" fill="'+css(col)+'"/>'
+     +'<text x="'+lx+'" y="'+ly+'" text-anchor="middle" font-family="Lexend,sans-serif" font-size="26" font-weight="700" font-style="italic" fill="'+css(col)+'">'+label+'</text>';
+    return h;
+  };
+  function build(k,showI,genMode){
+    /* dipôle centré en (320,130), largeur 120 */
+    wires.setAttribute('d','M40 130 H236 M404 130 H600');
+    symG.innerHTML='<g class="sym" transform="translate(236 95) scale(1.4)">'+SYM[k]+'</g>'
+      +'<text x="320" y="62" text-anchor="middle" class="txt" style="font-size:14px;fill:var(--muted)"></text>';
+    var h='';
+    h+='<line x1="238" y1="165" x2="238" y2="208" stroke="'+css('green')+'" stroke-width="2" stroke-dasharray="4 4"/>';
+    h+='<line x1="402" y1="165" x2="402" y2="208" stroke="'+css('green')+'" stroke-width="2" stroke-dasharray="4 4"/>';
+    h+=arrowSvg(402,240,226,'green','U',320,264);
+    if(showI){
+      if(dir<0)h+=arrowSvg(210,90,62,'red','I',150,46);
+      else h+=arrowSvg(90,210,62,'red','I',150,46);
+    }
+    arrG.innerHTML=h;
+  }
+  function moveDots(dt){
+    ds.forEach(function(d){
+      d.x+=dir*110*dt;if(d.x<40)d.x+=560;if(d.x>600)d.x-=560;
+      var inside=d.x>234&&d.x<406;
+      d.g.setAttribute('transform','translate('+d.x+' 130) rotate('+(dir<0?180:0)+')');d.g.style.display=(inside||!showDots)?'none':'';
+    });
+  }
+  var showDots=true;
+  ticks.push(function(dt){if(!shown('doc-4'))return;moveDots(dt);});
+  function render(){
+    $('#d4-gen').setAttribute('aria-pressed',(!quiz&&gen)?'true':'false');
+    $('#d4-rec').setAttribute('aria-pressed',(!quiz&&!gen)?'true':'false');
+    $('#d4-quiz').setAttribute('aria-pressed',quiz?'true':'false');
+    var say=$('#d4-say'),ctl=$('#d4-ctl');ctl.innerHTML='';
+    if(!quiz){
+      dir=gen?-1:1;showDots=true;
+      build(gen?'pile':'lampe',true);
+      say.className='say';
+      say.innerHTML=gen?"<b>Générateur</b> : U et I dans le <b>même sens</b>.":"<b>Récepteur</b> : U et I en <b>sens opposé</b>.";
+    }else{
+      var q=QZ[qi];showDots=false;
+      build(q.k,false);
+      say.className='say';say.innerHTML='<b>'+q.n+'</b> ('+(qi+1)+'/'+QZ.length+') : dans quel sens va I ?';
+      answered=false;
+      var row=document.createElement('div');row.className='quiz-row';
+      var L=document.createElement('button');L.className='btn big';L.textContent='I vers la gauche  ←';
+      var R=document.createElement('button');R.className='btn big';R.textContent='I vers la droite  →';
+      function answer(d){
+        if(answered)return;answered=true;
+        var good=q.gen?-1:1;dir=good;showDots=true;build(q.k,true);
+        if(d===good){say.className='say';say.innerHTML='Exact ! '+(q.gen?'Générateur : même sens.':'Récepteur : sens opposé.');}
+        else{say.className='say warn';say.innerHTML='Non. '+(q.gen?'Générateur : même sens.':'Récepteur : sens opposé.');}
+        var nx=document.createElement('button');nx.className='btn alt big';nx.textContent=qi<QZ.length-1?'Dipôle suivant':'Recommencer';
+        nx.addEventListener('click',function(){qi=(qi+1)%QZ.length;render();});row.appendChild(nx);
+      }
+      L.addEventListener('click',function(){answer(-1);});R.addEventListener('click',function(){answer(1);});
+      row.appendChild(L);row.appendChild(R);ctl.appendChild(row);
+    }
+  }
+  $('#d4-gen').addEventListener('click',function(){quiz=false;gen=true;render();});
+  $('#d4-rec').addEventListener('click',function(){quiz=false;gen=false;render();});
+  $('#d4-quiz').addEventListener('click',function(){quiz=true;qi=0;render();});
+  render();
+})();
+
+})();
+</script>
+</body>
+</html>
